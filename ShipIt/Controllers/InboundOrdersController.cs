@@ -41,15 +41,29 @@ namespace ShipIt.Controllers
 
             //creates list of stockdatamodel(productid, warehouseid, held) based on warehouseid
             var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
+            var allProductIds = allStock.Select(p=>p.ProductId).ToList();
+            //Part 3 make optimised query to get all products once
+            var allProducts = _productRepository.GetProductsById (allProductIds);
+
+            //create a dictionary with key stock.ProductId and value product data model
+             var productsDictionary = allProducts.ToDictionary(p=>p.Id, p=>new Product(p));
+            
+             //Part 3 make optimised query to get all companies at once
+            var allProductGcps = allProducts.Select(p=>p.Gcp).ToList();
+            var allCompanies =  _companyRepository.GetCompanies (allProductGcps);
+             //create a dictionary with key Gcp and value company data model
+            var companiessDictionary = allCompanies.ToDictionary(p=>p.Gcp, p=>new Company(p));
 
             //creates a dictionary with key as company as value as list of inboundorderline(gtin,name,quantity)
             Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
             foreach (var stock in allStock)
             {
-                Product product = new Product(_productRepository.GetProductById(stock.ProductId));
+                 Product product = productsDictionary[stock.ProductId];
+                // Product product = new Product(_productRepository.GetProductById(stock.ProductId));
                 if(stock.held < product.LowerThreshold && !product.Discontinued)
                 {
-                    Company company = new Company(_companyRepository.GetCompany(product.Gcp));
+                    // Company company = new Company(_companyRepository.GetCompany(product.Gcp));
+                     Company company = companiessDictionary[product.Gcp];
 
                     var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
 
