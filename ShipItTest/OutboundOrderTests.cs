@@ -55,6 +55,7 @@ namespace ShipItTest
                         quantity = 3
                     }
                 }
+               
             };
 
             outboundOrderController.Post(outboundOrder);

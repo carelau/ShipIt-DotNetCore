@@ -28,16 +28,21 @@ namespace ShipIt.Controllers
         }
 
         [HttpGet("{warehouseId}")]
+
+        //returns inboundorderresponse( operations manager, warehouseid,list of order segment)
         public InboundOrderResponse Get([FromRoute] int warehouseId)
         {
             Log.Info("orderIn for warehouseId: " + warehouseId);
 
+            //get operations manager for a warehouseID
             var operationsManager = new Employee(_employeeRepository.GetOperationsManager(warehouseId));
 
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
 
+            //creates list of stockdatamodel(productid, warehouseid, held) based on warehouseid
             var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
 
+            //creates a dictionary with key as company as value as list of inboundorderline(gtin,name,quantity)
             Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
             foreach (var stock in allStock)
             {
@@ -65,6 +70,7 @@ namespace ShipIt.Controllers
 
             Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
 
+            //ordersegment is list of inbound order line and company
             var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
             {
                 OrderLines = ol.Value,
@@ -82,6 +88,8 @@ namespace ShipIt.Controllers
         }
 
         [HttpPost("")]
+
+        //InboundManifestRequestModel is warehouseid, Gcp, and list of orderline
         public void Post([FromBody] InboundManifestRequestModel requestModel)
         {
             Log.Info("Processing manifest: " + requestModel);
